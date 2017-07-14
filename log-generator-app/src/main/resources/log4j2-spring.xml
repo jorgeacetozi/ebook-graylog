@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="OFF" packages="org.graylog2.log4j2">
+	<Appenders>
+		<Console name="ConsoleAppender" target="SYSTEM_OUT">
+			<PatternLayout pattern="%d [%t] %-5level %logger{36} - %msg%n%throwable" />
+		</Console>
+
+		<GELF name="GraylogTcpAppender" server="10.0.0.5" port="12201" protocol="tcp">
+			<PatternLayout pattern="%logger{36} - %msg%n" />
+			<!-- Additional fields -->
+			<KeyValuePair key="tcp" value="true" />
+		</GELF>
+
+		<Socket name="GraylogUdpAppender" protocol="udp" host="10.0.0.5" port="12201">
+			<GelfLayout host="someserver" compressionType="GZIP"
+				compressionThreshold="1024">
+				<KeyValuePair key="additionalField1" value="constant value" />
+				<KeyValuePair key="additionalField2" value="$${ctx:key}" />
+			</GelfLayout>
+		</Socket>
+	</Appenders>
+
+	<Loggers>
+		<Root level="info">
+			<AppenderRef ref="ConsoleAppender" />
+			<AppenderRef ref="GraylogUdpAppender" />
+		</Root>
+
+		<Logger name="GraylogTcpLogger" additivity="false">
+			<AppenderRef ref="ConsoleAppender" />
+			<appender-ref ref="GraylogTcpAppender" />
+		</Logger>
+	</Loggers>
+</Configuration>
