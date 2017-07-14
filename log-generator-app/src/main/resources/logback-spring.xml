@@ -1,0 +1,29 @@
+<configuration>
+	<appender name="ConsoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+		<layout class="ch.qos.logback.classic.PatternLayout">
+			<Pattern>
+				%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n
+			</Pattern>
+		</layout>
+	</appender>
+
+	<appender name="GraylogUdpAppender" class="de.siegmar.logbackgelf.GelfUdpAppender">
+		<graylogHost>10.0.0.5</graylogHost>
+		<graylogPort>12201</graylogPort>
+	</appender>
+
+	<appender name="GraylogTcpAppender" class="de.siegmar.logbackgelf.GelfTcpAppender">
+		<graylogHost>10.0.0.5</graylogHost>
+		<graylogPort>12201</graylogPort>
+	</appender>
+
+	<root level="info">
+		<appender-ref ref="ConsoleAppender" />
+		<appender-ref ref="GraylogUdpAppender" />
+	</root>
+
+	<logger name="GraylogTcpLogger" level="info" additivity="false">
+		<appender-ref ref="ConsoleAppender" />
+		<appender-ref ref="GraylogTcpAppender" />
+	</logger>
+</configuration>
