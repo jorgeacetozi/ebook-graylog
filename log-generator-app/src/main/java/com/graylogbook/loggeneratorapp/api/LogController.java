@@ -20,7 +20,7 @@ public class LogController {
 	@ResponseBody
 	public void generateInfoLogUdp(@PathParam(value = "n") Integer n) throws InterruptedException {
 		for (int i = 0; i < n; i++) {
-			// Thread.sleep(1l);
+			Thread.sleep(1l);
 			logger.info("Generating and sending INFO log using UDP {}", i);
 		}
 	}
@@ -29,7 +29,7 @@ public class LogController {
 	@ResponseBody
 	public void generateInfoLogTcp(@PathParam(value = "n") Integer n) throws InterruptedException {
 		for (int i = 0; i < n; i++) {
-			// Thread.sleep(1l);
+			Thread.sleep(1l);
 			tcpLogger.info("Generating and sending INFO log using TCP {}", i);
 		}
 	}
