@@ -9,37 +9,35 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
-public class LogController {
-	// uses UDP, we don't care so much if a message don't reach Graylog
+public class GelfLogController {
+	// Uses UDP, we don't care so much if a message doesn't reach Graylog
 	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-	// uses TCP, we wanna make sure that messages logged with tcpLogger will reach Graylog
+	// Uses TCP, we want to make sure that messages logged with tcpLogger will reach Graylog
 	private final Logger tcpLogger = LoggerFactory.getLogger("GraylogTcpLogger");
 
 	@RequestMapping(path = "/log-info-udp")
 	@ResponseBody
-	public void generateInfoLogUdp(@PathParam(value = "n") Integer n) throws InterruptedException {
+	public void generateInfoLogUdp(@PathParam(value = "n") Integer n) {
 		for (int i = 0; i < n; i++) {
-			Thread.sleep(1l);
-			logger.info("Generating and sending INFO log using UDP {}", i);
+			logger.info("Generating INFO log using UDP");
 		}
 	}
 
 	@RequestMapping(path = "/log-info-tcp")
 	@ResponseBody
-	public void generateInfoLogTcp(@PathParam(value = "n") Integer n) throws InterruptedException {
+	public void generateInfoLogTcp(@PathParam(value = "n") Integer n) {
 		for (int i = 0; i < n; i++) {
-			Thread.sleep(1l);
-			tcpLogger.info("Generating and sending INFO log using TCP {}", i);
+			tcpLogger.info("Generating INFO log using TCP");
 		}
 	}
 
-	@RequestMapping(path = "/log-error")
+	@RequestMapping(path = "/log-error-tcp")
 	@ResponseBody
 	public void generateErrorLog() {
 		try {
 			throw new RuntimeException();
-		} catch (Exception e) {
+		} catch (RuntimeException e) {
 			tcpLogger.error("Using TCP to send an important error message that must always reach Graylog", e);
 		}
 	}

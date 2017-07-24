@@ -48,17 +48,21 @@ Vagrant.configure("2") do |config|
     end
   end
 
-  config.vm.define "mongo" do |mongo|
-    mongo.vm.hostname = "mongo"
-    mongo.vm.network "private_network", ip: "10.0.0.30"
+  config.vm.define "mongodb" do |mongodb|
+    mongodb.vm.hostname = "mongodb"
+    mongodb.vm.network "private_network", ip: "10.0.0.30"
 
-    mongo.vm.provision "docker" do |d|
-      d.run "mongo",
+    mongodb.vm.provision "docker" do |d|
+      d.run "mongodb",
         image: "mongo",
         args: "-p 27017:27017"
     end
   end
 
+
+  ###############################################
+  ######## CONFIGURATION WITHOUT FLUENTD ########
+  ###############################################
   config.vm.define "graylog_master" do |graylog_master|
     graylog_master.vm.hostname = "master"
     graylog_master.vm.network "private_network", ip: "10.0.0.40"
@@ -70,10 +74,11 @@ Vagrant.configure("2") do |config|
       d.run "graylog",
         image: "jorgeacetozi/graylog:2.2.3",
         args: "--net=host \
-               -p 12514:12514/udp \
+               -p 9000:9000 \
+               -p 5140:5140/udp \
                -p 12201:12201/udp \
                -p 12201:12201 \
-               -v '/vagrant/conf/graylog-server-master/graylog.conf:/etc/graylog/server/server.conf'"
+               -v '/vagrant/conf/graylog/graylog-server-master/graylog.conf:/etc/graylog/server/server.conf'"
     end
   end
 
@@ -88,10 +93,11 @@ Vagrant.configure("2") do |config|
       d.run "graylog",
         image: "jorgeacetozi/graylog:2.2.3",
         args: "--net=host \
-               -p 12514:12514/udp \
+               -p 9000:9000 \
+               -p 5140:5140/udp \
                -p 12201:12201/udp \
                -p 12201:12201 \
-               -v '/vagrant/conf/graylog-server-slave/graylog.conf:/etc/graylog/server/server.conf'"
+               -v '/vagrant/conf/graylog/graylog-server-slave/graylog.conf:/etc/graylog/server/server.conf'"
     end
   end
 
@@ -99,17 +105,216 @@ Vagrant.configure("2") do |config|
     nginx.vm.hostname = "nginx"
     nginx.vm.network "private_network", ip: "10.0.0.5"
 
-    # Cannot bind to 80 on host
-    nginx.vm.network "forwarded_port", guest: 80, host: 8080
+    nginx.vm.provision "docker" do |d|
+      d.run "nginx",
+        image: "nginx",
+        args: "-p 80:80 \
+               -p 5140:5140/udp \
+               -p 12201:12201/udp \
+               -p 12201:12201 \
+               -v '/vagrant/conf/graylog/nginx/nginx-without-fluentd.conf:/etc/nginx/nginx.conf:ro'"
+    end
+  end
+
+  config.vm.define "log_generator_app" do |application|
+    application.vm.hostname = "application"
+    application.vm.network "private_network", ip: "10.0.0.200"
+
+    application.vm.provision "docker" do |d|
+      d.run "log_generator_app",
+        image: "jorgeacetozi/spring-boot-runner:1.0",
+        args: "-p 8080:8080 \
+               -e ARTIFACT_URL='https://s3.amazonaws.com/graylogbook/log-generator-app-log4j2.jar'"
+
+#    application.vm.provision "docker" do |d|
+#      d.run "log_generator_app",
+#        image: "jorgeacetozi/spring-boot-runner:1.0",
+#        args: "-p 8080:8080 \
+#               -e ARTIFACT_URL='https://s3.amazonaws.com/graylogbook/log-generator-app-logback-gelf.jar'"
+    end
+  end
+
+  ############# GRAYLOG CONTENTPACKS CONFIGURATION #############
+#  config.vm.define "graylog_master" do |graylog_master|
+#    graylog_master.vm.hostname = "master"
+#    graylog_master.vm.network "private_network", ip: "10.0.0.40"
+#    graylog_master.vm.provider "virtualbox" do |vb|
+#      vb.memory = "2048"
+#    end
+#
+#    graylog_master.vm.provision "docker" do |d|
+#      d.run "graylog",
+#        image: "jorgeacetozi/graylog:2.2.3-contentpacks",
+#        args: "--net=host \
+#               -p 9000:9000 \
+#               -p 12514:12514/udp \
+#               -p 12201:12201/udp \
+#               -p 12201:12201 \
+#               -v '/vagrant/conf/graylog-server-master/graylog-contentpacks.conf:/etc/graylog/server/server.conf'"
+#    end
+#  end
+#
+#  config.vm.define "graylog_slave" do |graylog_slave|
+#    graylog_slave.vm.hostname = "slave"
+#    graylog_slave.vm.network "private_network", ip: "10.0.0.50"
+#    graylog_slave.vm.provider "virtualbox" do |vb|
+#      vb.memory = "2048"
+#    end
+#
+#    graylog_slave.vm.provision "docker" do |d|
+#      d.run "graylog",
+#        image: "jorgeacetozi/graylog:2.2.3-contentpacks",
+#        args: "--net=host \
+#               -p 9000:9000 \
+#               -p 12514:12514/udp \
+#               -p 12201:12201/udp \
+#               -p 12201:12201 \
+#               -v '/vagrant/conf/graylog-server-slave/graylog-contentpacks.conf:/etc/graylog/server/server.conf'"
+#    end
+#  end
+
+
+  ######################################################################
+  ######## COMMON GRAYLOG AND NGINX CONFIGURATION USING FLUENTD ########
+  ######################################################################
+  config.vm.define "graylog_master" do |graylog_master|
+    graylog_master.vm.hostname = "master"
+    graylog_master.vm.network "private_network", ip: "10.0.0.40"
+    graylog_master.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"
+    end
+
+    graylog_master.vm.provision "docker" do |d|
+      d.run "graylog",
+        image: "jorgeacetozi/graylog:2.2.3",
+        args: "--net=host \
+               -p 9000:9000 \
+               -p 12201:12201 \
+               -v '/vagrant/conf/graylog/graylog-server-master/graylog.conf:/etc/graylog/server/server.conf'"
+    end
+  end
+
+  config.vm.define "graylog_slave" do |graylog_slave|
+    graylog_slave.vm.hostname = "slave"
+    graylog_slave.vm.network "private_network", ip: "10.0.0.50"
+    graylog_slave.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"
+    end
+
+    graylog_slave.vm.provision "docker" do |d|
+      d.run "graylog",
+        image: "jorgeacetozi/graylog:2.2.3",
+        args: "--net=host \
+               -p 9000:9000 \
+               -p 12201:12201 \
+               -v '/vagrant/conf/graylog/graylog-server-slave/graylog.conf:/etc/graylog/server/server.conf'"
+    end
+  end
+
+  config.vm.define "nginx" do |nginx|
+    nginx.vm.hostname = "nginx"
+    nginx.vm.network "private_network", ip: "10.0.0.5"
 
     nginx.vm.provision "docker" do |d|
       d.run "nginx",
         image: "nginx",
         args: "-p 80:80 \
-               -p 12514:12514/udp \
-               -p 12201:12201/udp \
                -p 12201:12201 \
-               -v '/vagrant/conf/nginx/nginx.conf:/etc/nginx/nginx.conf:ro'"
+               -v '/vagrant/conf/graylog/nginx/nginx-with-fluentd.conf:/etc/nginx/nginx.conf:ro'"
     end
   end
+
+
+  ############################################################
+  ######## CONFIGURATION WITH FLUENTD SINGLE INSTANCE ########
+  ############################################################
+  config.vm.define "fluentd_single_instance" do |fluentd|
+    fluentd.vm.hostname = "fluentd"
+    fluentd.vm.network "private_network", ip: "10.0.0.100"
+
+    fluentd.vm.provision "docker" do |d|
+      d.run "fluentd",
+        image: "jorgeacetozi/fluentd:0.14.19",
+        args: "-p 24224:24224 \
+               -p 24224:24224/udp \
+               -p 5140:5140/udp \
+               -v '/vagrant/conf/fluentd/single-instance/fluentd-single-instance.conf:/fluentd/etc/fluent.conf'"
+    end
+  end
+
+  config.vm.define "log_generator_app" do |application|
+    application.vm.hostname = "application"
+    application.vm.network "private_network", ip: "10.0.0.200"
+
+    application.vm.provision "docker" do |d|
+      d.run "log_generator_app",
+        image: "jorgeacetozi/spring-boot-runner:1.0",
+        args: "-p 8080:8080 \
+               -e ARTIFACT_URL='https://s3.amazonaws.com/graylogbook/log-generator-app-logback-fluentd.jar'"
+
+      d.run "nginx",
+        image: "nginx",
+        args: "-p 80:80 \
+               -v '/vagrant/conf/log-generator-app/nginx/nginx-fluentd-single-instance.conf:/etc/nginx/nginx.conf:ro'"
+    end
+  end
+
+
+  #################################################################
+  ######## CONFIGURATION WITH FLUENTD FORWARDER AGGREGATOR ########
+  #################################################################
+  config.vm.define "fluentd_aggregator_1" do |fluentd|
+    fluentd.vm.hostname = "fluentd"
+    fluentd.vm.network "private_network", ip: "10.0.0.110"
+
+    fluentd.vm.provision "docker" do |d|
+      d.run "fluentd-aggregator",
+        image: "jorgeacetozi/fluentd:0.14.19",
+        args: "-p 24224:24224 \
+               -p 24224:24224/udp \
+               -p 5140:5140/udp \
+               -v '/vagrant/conf/fluentd/aggregator/fluentd-aggregator.conf:/fluentd/etc/fluent.conf'"
+    end
+  end
+
+  config.vm.define "fluentd_aggregator_2" do |fluentd|
+    fluentd.vm.hostname = "fluentd"
+    fluentd.vm.network "private_network", ip: "10.0.0.120"
+
+    fluentd.vm.provision "docker" do |d|
+      d.run "fluentd-aggregator",
+        image: "jorgeacetozi/fluentd:0.14.19",
+        args: "-p 24224:24224 \
+               -p 24224:24224/udp \
+               -p 5140:5140/udp \
+               -v '/vagrant/conf/fluentd/aggregator/fluentd-aggregator.conf:/fluentd/etc/fluent.conf'"
+    end
+  end
+
+  config.vm.define "log_generator_app" do |application|
+    application.vm.hostname = "application"
+    application.vm.network "private_network", ip: "10.0.0.200"
+
+    application.vm.provision "docker" do |d|
+      d.run "fluentd-forwarder",
+        image: "jorgeacetozi/fluentd:0.14.19",
+        args: "-p 24224:24224 \
+               -p 5140:5140/udp \
+               -v '/vagrant/conf/fluentd/forwarder/fluentd-forwarder.conf:/fluentd/etc/fluent.conf'"
+
+      d.run "log_generator_app",
+        image: "jorgeacetozi/spring-boot-runner:1.0",
+        args: "-p 8080:8080 \
+               -e ARTIFACT_URL='https://s3.amazonaws.com/graylogbook/log-generator-app-logback-stdout.jar' \
+               --log-driver=fluentd \
+               --log-opt fluentd-address=tcp://localhost:24224 \
+               --log-opt fluentd-buffer-limit=10KB"
+
+      d.run "nginx",
+        image: "nginx",
+        args: "-p 80:80 \
+               -v '/vagrant/conf/log-generator-app/nginx/nginx-fluentd-forwarder-aggregator.conf:/etc/nginx/nginx.conf:ro'"
+    end
+  end
+
 end

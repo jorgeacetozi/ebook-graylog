@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 	<appender name="ConsoleAppender" class="ch.qos.logback.core.ConsoleAppender">
 		<layout class="ch.qos.logback.classic.PatternLayout">
@@ -7,7 +8,7 @@
 		</layout>
 	</appender>
 
-	<appender name="GraylogUdpAppender" class="de.siegmar.logbackgelf.GelfUdpAppender">
+<!-- 	<appender name="GraylogUdpAppender" class="de.siegmar.logbackgelf.GelfUdpAppender">
 		<graylogHost>10.0.0.5</graylogHost>
 		<graylogPort>12201</graylogPort>
 	</appender>
@@ -15,15 +16,32 @@
 	<appender name="GraylogTcpAppender" class="de.siegmar.logbackgelf.GelfTcpAppender">
 		<graylogHost>10.0.0.5</graylogHost>
 		<graylogPort>12201</graylogPort>
-	</appender>
+	</appender> -->
+	
+<!--  	<appender name="FluentdAppender" class="ch.qos.logback.more.appenders.DataFluentAppender">
+	    <tag>log-generator-app</tag>
+        <remoteHost>10.0.0.100</remoteHost>
+        <port>24224</port>
+    </appender> -->
 
-	<root level="info">
-		<appender-ref ref="ConsoleAppender" />
-		<appender-ref ref="GraylogUdpAppender" />
+<!-- 	<root level="info">
+  		<appender-ref ref="ConsoleAppender" />
+   		<appender-ref ref="GraylogUdpAppender" />
+  		<appender-ref ref="FluentdAppender" />
 	</root>
 
 	<logger name="GraylogTcpLogger" level="info" additivity="false">
-		<appender-ref ref="ConsoleAppender" />
-		<appender-ref ref="GraylogTcpAppender" />
-	</logger>
+ 		<appender-ref ref="ConsoleAppender" />
+  		<appender-ref ref="GraylogTcpAppender" />
+  		<appender-ref ref="FluentdAppender" />
+	</logger> -->
+	
+<!-- 	<root level="info">
+  		<appender-ref ref="ConsoleAppender" />
+  		<appender-ref ref="FluentdAppender" />
+	</root> -->
+	
+	<root level="info">
+  		<appender-ref ref="ConsoleAppender" />
+	</root>
 </configuration>
