@@ -1,0 +1,133 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/trusty64"
+
+  config.vm.provider "virtualbox" do |vb|
+     vb.memory = "512"
+  end
+  
+  config.vm.define "elasticsearch_node1" do |node1|
+    node1.vm.hostname = "node1"
+    node1.vm.network "private_network", ip: "10.0.0.10"
+
+    node1.vm.provision "docker" do |d|
+      d.run "elasticsearch_node1",
+        image: "jorgeacetozi/elasticsearch:2.3.5",
+        args: "--net=host \
+               --privileged \
+               -e CLUSTER_NAME=graylog \
+               -e NODE_NAME=node1 \
+               -e LOCK_MEMORY=true \
+               --ulimit memlock=-1:-1 \
+               --ulimit nofile=65536:65536 \
+               -e NETWORK_HOST=10.0.0.10 \
+               -e UNICAST_HOSTS='10.0.0.10:9300, 10.0.0.20:9300' \
+               -e ES_HEAP_SIZE=256m"
+    end
+  end
+
+  config.vm.define "elasticsearch_node2" do |node2|
+    node2.vm.hostname = "node2"
+    node2.vm.network "private_network", ip: "10.0.0.20"
+
+    node2.vm.provision "docker" do |d|
+      d.run "elasticsearch_node2",
+        image: "jorgeacetozi/elasticsearch:2.3.5",
+        args: "--net=host \
+               --privileged \
+               -e CLUSTER_NAME=graylog \
+               -e NODE_NAME=node2 \
+               -e LOCK_MEMORY=true \
+               --ulimit memlock=-1:-1 \
+               --ulimit nofile=65536:65536 \
+               -e NETWORK_HOST=10.0.0.20 \
+               -e UNICAST_HOSTS='10.0.0.10:9300, 10.0.0.20:9300' \
+               -e ES_HEAP_SIZE=256m"
+    end
+  end
+
+  config.vm.define "mongodb" do |mongodb|
+    mongodb.vm.hostname = "mongodb"
+    mongodb.vm.network "private_network", ip: "10.0.0.30"
+
+    mongodb.vm.provision "docker" do |d|
+      d.run "mongodb",
+        image: "mongo",
+        args: "-p 27017:27017"
+    end
+  end
+
+  config.vm.define "graylog_master" do |graylog_master|
+    graylog_master.vm.hostname = "master"
+    graylog_master.vm.network "private_network", ip: "10.0.0.40"
+    graylog_master.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"
+    end
+
+    graylog_master.vm.provision "docker" do |d|
+      d.run "graylog",
+        image: "jorgeacetozi/graylog:2.2.3",
+        args: "--net=host \
+               -p 9000:9000 \
+               -p 5140:5140/udp \
+               -p 12201:12201/udp \
+               -p 12201:12201 \
+               -v '/vagrant/conf/graylog/graylog-server-master/graylog.conf:/etc/graylog/server/server.conf'"
+    end
+  end
+
+  config.vm.define "graylog_slave" do |graylog_slave|
+    graylog_slave.vm.hostname = "slave"
+    graylog_slave.vm.network "private_network", ip: "10.0.0.50"
+    graylog_slave.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"
+    end
+
+    graylog_slave.vm.provision "docker" do |d|
+      d.run "graylog",
+        image: "jorgeacetozi/graylog:2.2.3",
+        args: "--net=host \
+               -p 9000:9000 \
+               -p 5140:5140/udp \
+               -p 12201:12201/udp \
+               -p 12201:12201 \
+               -v '/vagrant/conf/graylog/graylog-server-slave/graylog.conf:/etc/graylog/server/server.conf'"
+    end
+  end
+
+  config.vm.define "graylog_nginx" do |nginx|
+    nginx.vm.hostname = "nginx"
+    nginx.vm.network "private_network", ip: "10.0.0.5"
+
+    nginx.vm.provision "docker" do |d|
+      d.run "nginx",
+        image: "nginx",
+        args: "-p 80:80 \
+               -p 5140:5140/udp \
+               -p 12201:12201/udp \
+               -p 12201:12201 \
+               -v '/vagrant/conf/graylog/nginx/nginx-without-fluentd.conf:/etc/nginx/nginx.conf:ro'"
+    end
+  end
+
+  config.vm.define "log_generator_app" do |application|
+    application.vm.hostname = "application"
+    application.vm.network "private_network", ip: "10.0.0.200"
+
+    application.vm.provision "docker" do |d|
+      d.run "log_generator_app",
+        image: "jorgeacetozi/spring-boot-runner:1.0",
+        args: "-p 8080:8080 \
+               -e ARTIFACT_URL='https://s3.amazonaws.com/graylogbook/log-generator-app-log4j2.jar'"
+
+#    application.vm.provision "docker" do |d|
+#      d.run "log_generator_app",
+#        image: "jorgeacetozi/spring-boot-runner:1.0",
+#        args: "-p 8080:8080 \
+#               -e ARTIFACT_URL='https://s3.amazonaws.com/graylogbook/log-generator-app-logback-gelf.jar'"
+    end
+  end
+  
+end
