@@ -145,7 +145,7 @@ Vagrant.configure("2") do |config|
                -p 5140:5140/udp \
                -v '/vagrant/conf/fluentd/forwarder/fluentd-forwarder.conf:/fluentd/etc/fluent.conf'"
 
-      d.run "log_generator_app",
+      d.run "log-generator-app",
         image: "jorgeacetozi/spring-boot-runner:1.0",
         args: "-p 8080:8080 \
                -e ARTIFACT_URL='https://s3.amazonaws.com/graylogbook/log-generator-app-logback-stdout.jar' \

@@ -111,7 +111,7 @@ Vagrant.configure("2") do |config|
     fluentd.vm.network "private_network", ip: "10.0.0.100"
 
     fluentd.vm.provision "docker" do |d|
-      d.run "fluentd",
+      d.run "fluentd-single-instance",
         image: "jorgeacetozi/fluentd:0.14.19",
         args: "-p 24224:24224 \
                -p 24224:24224/udp \
@@ -125,7 +125,7 @@ Vagrant.configure("2") do |config|
     application.vm.network "private_network", ip: "10.0.0.200"
 
     application.vm.provision "docker" do |d|
-      d.run "log_generator_app",
+      d.run "log-generator-app",
         image: "jorgeacetozi/spring-boot-runner:1.0",
         args: "-p 8080:8080 \
                -e ARTIFACT_URL='https://s3.amazonaws.com/graylogbook/log-generator-app-logback-fluentd.jar'"
