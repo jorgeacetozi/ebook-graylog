@@ -1,1 +1,1 @@
-# Log Management with Graylog, Elasticsearch and MongoDB using Docker
+# Log Management with Graylog, Elasticsearch, MongoDB, Nginx, Fluentd and Docker
