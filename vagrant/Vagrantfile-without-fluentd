@@ -120,7 +120,7 @@ Vagrant.configure("2") do |config|
       d.run "log_generator_app",
         image: "jorgeacetozi/spring-boot-runner:1.0",
         args: "-p 8080:8080 \
-               -e ARTIFACT_URL='https://s3.amazonaws.com/graylogbook/log-generator-app-log4j2.jar'"
+               -e ARTIFACT_URL='https://s3.amazonaws.com/graylogbook/log-generator-app-log4j2-gelf.jar'"
 
 #    application.vm.provision "docker" do |d|
 #      d.run "log_generator_app",
