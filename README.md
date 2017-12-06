@@ -8,6 +8,7 @@ To make everything even more realistic, we will create our whole environment usi
 
 # Contents
 
+## Why You Should Read This Book
 ## Part 1: Centralized Log Management
 
 ### Chapter 1: The DevOps culture
