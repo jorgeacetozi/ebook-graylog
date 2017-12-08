@@ -133,5 +133,7 @@ To make everything even more realistic, we will create our whole environment usi
   - Refactor log-generator-app to use Docker Logging Fluentd
   - Performance tip: Unix Sockets
   - Concatenate multiline logs with fluent-plugin-concat
-        
+  
 ## What is next?
+
+## Appendices
