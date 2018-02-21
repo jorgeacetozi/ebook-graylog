@@ -114,7 +114,7 @@ Vagrant.configure("2") do |config|
         image: "nginx",
         args: "-p 80:80 \
                -p 12201:12201 \
-               -v '/vagrant/conf/graylog/nginx/nginx-with-fluentd.conf:/etc/nginx/nginx.conf:ro'"
+               -v '/vagrant/conf/graylog/nginx/nginx-with-fluentd.conf:/etc/nginx/nginx.conf'"
     end
   end
 
@@ -151,7 +151,7 @@ Vagrant.configure("2") do |config|
       d.run "nginx",
         image: "nginx",
         args: "-p 80:80 \
-               -v '/vagrant/conf/log-generator-app/nginx/nginx-fluentd-single-instance.conf:/etc/nginx/nginx.conf:ro'"
+               -v '/vagrant/conf/log-generator-app/nginx/nginx-fluentd-single-instance.conf:/etc/nginx/nginx.conf'"
     end
   end
 
