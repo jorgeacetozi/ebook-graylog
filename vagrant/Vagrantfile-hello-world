@@ -33,7 +33,7 @@ Vagrant.configure("2") do |config|
         image: "graylog/graylog:2.4.3-1",
         args: "--link mongo \
                --link elasticsearch \
-               -p 9000:9000 -p 12201:12201 -p 514:514 -p 5555:5555 \
+               -p 9000:9000 -p 12514:12514 -p 5555:5555 \
                -e 'GRAYLOG_WEB_ENDPOINT_URI=http://10.0.0.10:9000/api'"
 
 #               -e 'GRAYLOG_TRANSPORT_EMAIL_ENABLED=true' \
