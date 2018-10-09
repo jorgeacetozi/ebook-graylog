@@ -1,4 +1,4 @@
-# [Log Management with Graylog, Elasticsearch, MongoDB, Nginx, Fluentd and Docker](https://www.graylogbook.com)
+# [Log Management with Graylog, Elasticsearch, MongoDB, Nginx, Fluentd and Docker](https://leanpub.com/graylog)
 
 ![Graylog Book](/images/graylog-book.png)
 
